@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>2win</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f2f2f2;
+      max-width: 700px;
+      margin: auto;
+      padding: 1em;
+    }
+    h1 {
+      text-align: center;
+    }
+    form {
+      background: white;
+      padding: 1em;
+      margin-bottom: 2em;
+      border-radius: 8px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+    textarea, input[type="file"] {
+      width: 100%;
+      margin-bottom: 1em;
+    }
+    button {
+      padding: 0.5em 1em;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+    .post {
+      background: white;
+      padding: 1em;
+      margin-bottom: 1em;
+      border-radius: 8px;
+      box-shadow: 0 0 3px rgba(0,0,0,0.1);
+    }
+    .post img {
+      max-width: 100%;
+      margin-top: 0.5em;
+    }
+    .timestamp {
+      font-size: 0.8em;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <h1>2win</h1>
+  <form id="postForm">
+    <textarea id="text" placeholder="Write a post..." required></textarea>
+    <input type="file" id="image" accept="image/*">
+    <button type="submit">Add post</button>
+  </form>
+  <div id="feed"></div>
+
+  <script>
+    const API_URL = "https://twon-6y5r.onrender.com/api/posts";
+    const feed = document.getElementById("feed");
+    const form = document.getElementById("postForm");
+    const textInput = document.getElementById("text");
+    const imageInput = document.getElementById("image");
+
+    async function loadPosts() {
+      const res = await fetch(API_URL);
+      const posts = await res.json();
+      feed.innerHTML = "";
+      posts.forEach(post => {
+        const div = document.createElement("div");
+        div.className = "post";
+        div.innerHTML = `
+          <div class="timestamp">${new Date(post.timestamp).toLocaleString()}</div>
+          <div>${post.text}</div>
+          ${post.image ? `<img src="${post.image}">` : ""}
+        `;
+        feed.appendChild(div);
+      });
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const text = textInput.value.trim();
+      if (!text) return;
+
+      let imageData = null;
+      const file = imageInput.files[0];
+      if (file) {
+        imageData = await new Promise(resolve => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.readAsDataURL(file);
+        });
+      }
+
+      await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text,
+          image: imageData,
+          timestamp: Date.now()
+        })
+      });
+
+      textInput.value = "";
+      imageInput.value = "";
+      loadPosts();
+    });
+
+    loadPosts();
+  </script>
+</body>
+</html>
